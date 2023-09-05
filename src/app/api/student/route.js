@@ -4,6 +4,7 @@ import {
   zStudentPostBody,
   zStudentPutBody,
 } from "@/app/libs/schema";
+import { filter } from "lodash";
 import { NextResponse } from "next/server";
 
 export const GET = async (request) => {
@@ -31,6 +32,9 @@ export const GET = async (request) => {
   }
 
   //filter by student id here
+  if (studentId !== null) {
+    filtered = filtered.find((std) => std.studentId === studentId);
+  }
 
   return NextResponse.json({ ok: true, students: filtered });
 };
@@ -98,18 +102,39 @@ export const PUT = async (request) => {
 
 export const DELETE = async (request) => {
   //get body and validate it
+  const studentId = request.nextUrl.searchParams.get("studentId");
 
-  //check if student id exist
+  //check if student id does not contain 9 characters
+  if (!studentId || studentId.length !== 9) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Student Id must contain 9 characters",
+      },
+      { status: 400 }
+    );
+  }
 
-  //perform removing student from DB. You can choose from 2 choices
-  //1. use array filter method
-  // DB.students = DB.students.filter(...);
+  const foundIndex = DB.students.findIndex(
+    (std) => std.studentId === studentId
+  );
 
-  //or 2. use splice array method
-  // DB.students.splice(...)
+  // If student ID does not exist
+  if (foundIndex === -1) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Student Id does not found.",
+      },
+      { status: 404 }
+    );
+  }
+
+  //delete using splice array method
+  DB.students.splice(foundIndex, 1);
 
   return NextResponse.json({
     ok: true,
-    message: `Student Id xxx has been deleted`,
+    message: `Student Id ${studentId} has been deleted`,
   });
 };
